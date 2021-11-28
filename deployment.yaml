@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio
+  labels:
+    app: minio
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minio
+  template:
+    metadata:
+      labels:
+        app: minio
+    spec:
+      containers:
+        - name: minio
+          image: minio/minio
+          args: ["server", "/data", "--console-address", ":9001"]          
+          ports:
+            - containerPort: 9001
+          volumeMounts:
+            - name: data
+              mountPath: "/data"              
+            - name: empty
+              mountPath: "/empty" 
+             
+        - name: nginx
+          image: nginx:latest
+          ports:
+          - containerPort: 80
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d
+
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: nginx-configmap              
+        - name: data
+          persistentVolumeClaim:
+            claimName: minio-deployment-claim
+        - name: empty
+          emptyDir: {}
